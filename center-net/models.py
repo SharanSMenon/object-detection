@@ -3,8 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class BasicBlock(nn.Module):
-    """
-    """
+    """A Basic ResNet Block"""
     def __init__(self, inplanes, planes, stride=1, downsample = None):
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=3, stride=stride, padding=1, bias=False)

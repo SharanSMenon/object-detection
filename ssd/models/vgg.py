@@ -33,13 +33,33 @@ class VGGBase(nn.Module):
         self.conv6 = nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6)
         self.conv7 = nn.Conv2d(1024, 1024, kernel_size=1)
 
-    def forward(self, image):
-        out = F.relu(self.conv1_1(image))
-        out = F.relu(self.conv1_2(out))
-        out = self.pool1(out)
+    def forward(self, image: torch.Tensor):
+        # [N, 3, 300, 300] <- Starting Size
+        out = F.relu(self.conv1_1(image)) # (N, 64, 300, 300)
+        out = F.relu(self.conv1_2(out)) # (N, 64, 300, 300)
+        out = self.pool1(out) # (N, 64, 150, 150)
 
-        out = F.relu(self.conv2_1(image))
-        out = F.relu(self.conv2_2(out))
-        out = self.pool2(out)
+        out = F.relu(self.conv2_1(out)) # (N, 128, 150, 150)
+        out = F.relu(self.conv2_2(out)) # (N, 128, 150, 150)
+        out = self.pool2(out) # (N, 128, 75, 75)
+
+        out = F.relu(self.conv3_1(out)) # (N, 256, 75, 75)
+        out = F.relu(self.conv3_2(out)) # (N, 256, 75, 75)
+        out = F.relu(self.conv3_3(out)) # (N, 256, 75, 75)
+        out = self.pool3(out) # (N, 256, 38, 38)
         
-        return out
+        out = F.relu(self.conv4_1(out)) # (N, 512, 38, 38)
+        out = F.relu(self.conv4_2(out)) # (N, 512, 38, 38)
+        out = F.relu(self.conv4_3(out)) # (N, 512, 38, 38)
+        conv4_3_features = out
+        out = self.pool4(out) # (N, 512, 19, 19)
+
+        out = F.relu(self.conv4_1(out)) # (N, 512, 19, 19)
+        out = F.relu(self.conv5_2(out)) # (N, 512, 19, 19)
+        out = F.relu(self.conv5_3(out)) # (N, 512, 19, 19)
+        out = self.pool5(out) # (N, 512, 19, 19) <- Does not reduce dimensions
+
+        out = F.relu(self.conv6(out)) # (N, 1024, 19, 19)
+        conv7_features = self.conv7(out) # (N, 1024, 19, 19)
+
+        return conv4_3_features, conv7_features

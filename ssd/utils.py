@@ -18,6 +18,7 @@ label_color_map: dict = {k: distinct_colors[i] for i, k in enumerate(label_map.k
 ###################
 # Transformations #
 ###################
+# Replace with Albumentations #
 
 def expand(image: torch.Tensor, boxes, filler):
     orig_w = image.size(1)
@@ -162,3 +163,20 @@ def gcxgcy_to_cxcy(gcxgcy, priors_cxcy):
 
     return torch.cat([gcxgcy[:, :2] * priors_cxcy[:, 2:] / 10 + priors_cxcy[:, :2],  # c_x, c_y
                       torch.exp(gcxgcy[:, 2:] / 5) * priors_cxcy[:, 2:]], 1)  # w, h
+
+
+def find_intersection(set1, set2):
+    lower_bounds = torch.max(set1[:, :2].unsqueeze(1), set2[:, :2].unsqueeze(0))
+    upper_bounds = torch.min(set1[:, 2:].unsqueeze(1), set2[:, 2:].unsqueeze(0))
+    intersection_dims = torch.clamp(upper_bounds - lower_bounds, min=0)
+    return intersection_dims[:, :, 0] * intersection_dims[:, :, 1]
+
+def jaccard_overlap(set1, set2):
+    """Function for IoU"""
+    intersection = find_intersection(set1, set2)
+
+    areas_set_1 = (set1[:, 2] - set1[:, 0]) * (set1[:, 3] - set1[:, 1])
+    areas_set_2 = (set2[:, 2] - set2[:, 0]) * (set2[:, 3] - set2[:, 1])
+
+    union = areas_set_1.unsqueeze(0) - areas_set_2.unsqueeze(0) - intersection
+    return intersection / union
